@@ -5,13 +5,13 @@ export type SingleJob = {
 } & JobBase;
 
 export type ChainJob = {
-  jobs: {
+  chainJobs: {
     [index: number]: Job;
   };
 } & JobBase;
 
 export type ClusterJob = {
-  jobs: Job[];
+  jobCluster: Job[];
 } & JobBase;
 
 export const JobStatus = {
@@ -23,6 +23,7 @@ export const JobStatus = {
 type JobStatus = typeof JobStatus[keyof typeof JobStatus];
 
 type JobBase = {
+  id: string;
   name: string;
   createdAt: Date;
   onSuccess: () => Promise<void>;
@@ -30,10 +31,17 @@ type JobBase = {
 } & (
   | {
       status: 'succeed' | 'failed';
+      startedAt: Date;
       endedAt: Date;
     }
   | {
-      status: 'pending' | 'before-start';
+      status: 'pending';
+      startedAt: Date;
+      endedAt?: undefined;
+    }
+  | {
+      status: 'before-start';
+      startedAt?: undefined;
       endedAt?: undefined;
     }
 );
