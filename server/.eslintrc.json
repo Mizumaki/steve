@@ -1,0 +1,23 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "prettier" // The prettier's settings have priority over eslint
+  ],
+  "plugins": ["@typescript-eslint"],
+  "parser": "@typescript-eslint/parser",
+  "ignorePatterns": ["**/*.test.ts", "**/*.config.js"],
+  "parserOptions": {
+    "project": "./tsconfig.json",
+    "sourceType": "module"
+  },
+  "rules": {
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/interface-name-prefix": "off",
+    "@typescript-eslint/explicit-module-boundary-types": 0,
+    "@typescript-eslint/no-unsafe-call": "off", // For `jest` test code...
+    "@typescript-eslint/no-unsafe-member-access": "off", // For `jest` test code...
+    "prettier/prettier": ["off", {}, { "userprettierrc": true }] // Not showing coding style warninig. Coding style will be fixed by prettier.
+  }
+}

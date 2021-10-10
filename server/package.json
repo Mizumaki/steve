@@ -1,0 +1,50 @@
+{
+  "name": "steve-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Ryota Mizumaki <statham.programming@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "start": "npm run build && concurrently --kill-others-on-fail --names \"babel,server\" --prefix-colors \"yellow,green\" npm:start:babel npm:start:server",
+    "start:babel": "npm run build:babel -- --watch",
+    "start:server": "node-dev ./dist/index",
+    "build": "npm run lint:tsc && npm run build:babel",
+    "build:babel": "babel ./src --extensions .ts --out-dir ./dist",
+    "lint": "npm run lint:tsc & npm run lint:eslint:write",
+    "lint:tsc": "tsc --noEmit",
+    "lint:eslint": "eslint './src/**/*.{js,ts,jsx,tsx}'",
+    "lint:eslint:write": "npm run lint:eslint -- --fix",
+    "format": "prettier --write './src/**/*.{js,ts,jsx,tsx,json}'",
+    "format:dry-run": "prettier --check './src/**/*.{js,ts,jsx,tsx,json}'",
+    "test": "jest",
+    "precommit": "lint-staged"
+  },
+  "lint-staged": {
+    "src/**/*.{js,ts,jsx,tsx}": ["npm run lint", "npm run format"]
+  },
+  "dependencies": {
+    "fastify": "^3.15.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.13.16",
+    "@babel/core": "^7.13.16",
+    "@babel/preset-env": "^7.13.15",
+    "@babel/preset-typescript": "^7.13.0",
+    "@types/jest": "^26.0.23",
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "@typescript-eslint/parser": "^4.22.0",
+    "babel-jest": "^26.6.3",
+    "babel-plugin-minify-dead-code-elimination": "^0.5.1",
+    "babel-plugin-module-resolver": "^4.1.0",
+    "babel-plugin-transform-define": "^2.0.0",
+    "concurrently": "^6.0.2",
+    "eslint": "^7.25.0",
+    "eslint-config-prettier": "^8.3.0",
+    "husky": "^6.0.0",
+    "jest": "^26.6.3",
+    "lint-staged": "^10.5.4",
+    "node-dev": "^6.7.0",
+    "prettier": "^2.2.1",
+    "typescript": "^4.2.4"
+  }
+}
