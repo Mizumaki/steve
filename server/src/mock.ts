@@ -9,10 +9,6 @@ const singleJob = () =>
     status: 'pending',
     createdAt: new Date(),
     startedAt: new Date(),
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    onSuccess: (() => {}) as () => Promise<void>,
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    onFailed: (() => {}) as () => Promise<void>,
   } as const);
 
 const chainJob1 = () =>
@@ -26,10 +22,6 @@ const chainJob1 = () =>
     status: 'pending',
     createdAt: new Date(),
     startedAt: new Date(),
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    onSuccess: (() => {}) as () => Promise<void>,
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    onFailed: (() => {}) as () => Promise<void>,
   } as const);
 
 const clusterJob1 = () =>
@@ -40,10 +32,6 @@ const clusterJob1 = () =>
     status: 'pending',
     createdAt: new Date(),
     startedAt: new Date(),
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    onSuccess: (() => {}) as () => Promise<void>,
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    onFailed: (() => {}) as () => Promise<void>,
   } as const);
 
 const chainJob2 = () =>
@@ -58,10 +46,6 @@ const chainJob2 = () =>
     status: 'pending',
     createdAt: new Date(),
     startedAt: new Date(),
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    onSuccess: (() => {}) as () => Promise<void>,
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    onFailed: (() => {}) as () => Promise<void>,
   } as const);
 
 const clusterJob2 = () =>
@@ -72,10 +56,6 @@ const clusterJob2 = () =>
     status: 'pending',
     createdAt: new Date(),
     startedAt: new Date(),
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    onSuccess: (() => {}) as () => Promise<void>,
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    onFailed: (() => {}) as () => Promise<void>,
   } as const);
 
 export const mock = (): Job[] => {

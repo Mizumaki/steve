@@ -1,7 +1,9 @@
+import type { Command } from "./Command";
+
 export type Job = SingleJob | ChainJob | ClusterJob;
 
 export type SingleJob = {
-  command: string;
+  command: Command;
 } & JobBase;
 
 export type ChainJob = {
@@ -26,8 +28,8 @@ type JobBase = {
   id: string;
   name: string;
   createdAt: Date;
-  onSuccess: () => Promise<void>;
-  onFailed: () => Promise<void>;
+  onSuccess?: Command;
+  onFailed?: Command;
 } & (
   | {
       status: 'succeed' | 'failed';
