@@ -1,11 +1,14 @@
 <script lang="ts">
-  import type { SingleJob } from "src/logics/Job";
-  export let item: SingleJob
+  import type { SingleJob } from 'src/logics/Job';
+  export let item: SingleJob;
 </script>
 
-<div class='jobRow'>
+<div class="jobRow">
   <div>{item.name}</div>
-  <div>{item.command}</div>
+  <div class="command">
+    <div>command</div>
+    <div>{item.command}</div>
+  </div>
   <div>{item.status}</div>
 </div>
 
@@ -13,6 +16,8 @@
   .jobRow {
     display: flex;
     justify-content: space-between;
-    padding: 1em;
+  }
+  .command {
+    text-align: left;
   }
 </style>

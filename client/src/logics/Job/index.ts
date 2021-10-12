@@ -1,4 +1,4 @@
-export type Command = string
+export type Command = string;
 
 export type Job = SingleJob | ChainJob | ClusterJob;
 

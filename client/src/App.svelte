@@ -4,16 +4,16 @@
   import type { Job } from './logics/Job';
   import { fetchJobs } from './logics/Job/fetchJobs';
   let jobs: Job[] | undefined = undefined;
-  let error: string = ''
+  let error: string = '';
 
   onMount(async () => {
-    const res = await fetchJobs()
+    const res = await fetchJobs();
     if (res.isFailed) {
-      error = res.error
-      return
+      error = res.error;
+      return;
     }
-    jobs = res.data
-  })
+    jobs = res.data;
+  });
 </script>
 
 <main>
