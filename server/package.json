@@ -20,10 +20,15 @@
     "precommit": "lint-staged"
   },
   "lint-staged": {
-    "src/**/*.{js,ts,jsx,tsx}": ["npm run lint", "npm run format"]
+    "src/**/*.{js,ts,jsx,tsx}": [
+      "npm run lint",
+      "npm run format"
+    ]
   },
   "dependencies": {
-    "fastify": "^3.15.0"
+    "fastify": "^3.15.0",
+    "fastify-cors": "^6.0.2",
+    "ulid": "^2.3.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.13.16",
