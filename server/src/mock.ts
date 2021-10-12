@@ -4,6 +4,7 @@ import { ulid } from 'ulid';
 const singleJob = () =>
   ({
     id: ulid(),
+    type: 'single',
     name: '単一Job',
     command: 'curl localhost:8080',
     status: 'pending',
@@ -14,6 +15,7 @@ const singleJob = () =>
 const chainJob1 = () =>
   ({
     id: ulid(),
+    type: 'chain',
     name: 'チェーンJob',
     chainJobs: {
       0: singleJob(),
@@ -27,6 +29,7 @@ const chainJob1 = () =>
 const clusterJob1 = () =>
   ({
     id: ulid(),
+    type: 'cluster',
     name: 'クラスターJob',
     jobCluster: [singleJob(), chainJob1()] as Job[],
     status: 'pending',
@@ -37,6 +40,7 @@ const clusterJob1 = () =>
 const chainJob2 = () =>
   ({
     id: ulid(),
+    type: 'chain',
     name: 'チェーンJob2',
     chainJobs: {
       0: singleJob(),
@@ -51,6 +55,7 @@ const chainJob2 = () =>
 const clusterJob2 = () =>
   ({
     id: ulid(),
+    type: 'cluster',
     name: 'クラスターJob2',
     jobCluster: [singleJob(), chainJob1(), clusterJob1()] as Job[],
     status: 'pending',

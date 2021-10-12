@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import List from './lib/JobList.svelte';
+  import List from './components/JobList/index.svelte';
   import type { Job } from './logics/Job';
   import { fetchJobs } from './logics/Job/fetchJobs';
   let jobs: Job[] | undefined = undefined;

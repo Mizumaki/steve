@@ -1,18 +1,21 @@
-import type { Command } from "./Command";
+import type { Command } from './Command';
 
 export type Job = SingleJob | ChainJob | ClusterJob;
 
 export type SingleJob = {
+  type: 'single';
   command: Command;
 } & JobBase;
 
 export type ChainJob = {
+  type: 'chain';
   chainJobs: {
     [index: number]: Job;
   };
 } & JobBase;
 
 export type ClusterJob = {
+  type: 'cluster';
   jobCluster: Job[];
 } & JobBase;
 
