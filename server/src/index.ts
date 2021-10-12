@@ -1,10 +1,13 @@
 import fastify from 'fastify';
+import fastifyCors from 'fastify-cors';
 import type { Job } from './entity/Job';
 import { mock } from './mock';
 
 const port = process.env['PORT'] || 8080;
 
 const app = fastify();
+// TODO: Set correct cors
+void app.register(fastifyCors, { origin: true });
 
 // TODO: Replace by permanent store (like Redis)
 const jobs: Job[] = mock();
