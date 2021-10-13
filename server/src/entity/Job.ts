@@ -20,10 +20,11 @@ export type ClusterJob = {
 } & JobBase;
 
 export const JobStatus = {
-  succeed: 'succeed',
-  failed: 'failed',
-  pending: 'pending',
   beforeStart: 'before-start',
+  ongoing: 'ongoing',
+  pending: 'pending',
+  succeeded: 'succeeded',
+  failed: 'failed',
 } as const;
 type JobStatus = typeof JobStatus[keyof typeof JobStatus];
 
@@ -35,9 +36,14 @@ type JobBase = {
   onFailed?: Command;
 } & (
   | {
-      status: 'succeed' | 'failed';
+      status: 'succeeded' | 'failed';
       startedAt: Date;
       endedAt: Date;
+    }
+  | {
+      status: 'ongoing';
+      startedAt: Date;
+      endedAt?: undefined;
     }
   | {
       status: 'pending';
