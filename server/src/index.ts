@@ -34,9 +34,16 @@ app.patch('/jobs/:id', (_req, res) => {
 });
 
 /**
- * Job の status のみを更新する
+ * Job の start
  */
-app.put('/jobs/:id/status', (_req, res) => {
+app.post('/jobs/:id/start', (_req, res) => {
+  void res.send();
+});
+
+/**
+ * Job の stop
+ */
+app.post('/jobs/:id/stop', (_req, res) => {
   void res.send();
 });
 
