@@ -1,7 +1,9 @@
 import fastify from 'fastify';
 import fastifyCors from 'fastify-cors';
-import type { Job } from './entity/Job';
+import { Job, JobStatus, JobType } from './entity/Job';
+import type { Task } from './entity/Task';
 import { genJobMock, mock } from './mock';
+import { assertNever } from './utils/assertNever';
 
 const port = process.env['PORT'] || 8080;
 
@@ -11,6 +13,10 @@ void app.register(fastifyCors, { origin: true });
 
 // TODO: Replace by permanent store (like Redis)
 const jobs: Job[] = mock();
+
+// 実際には無限ではないが、しょうがない
+type InfiniteDeepArray<T> = T | (T | T[] | T[][] | T[][][] | T[][][][])[];
+const processQueue: Set<InfiniteDeepArray<Task>> = new Set();
 
 /**
  * Job 一覧を取得
@@ -40,7 +46,41 @@ app.patch('/jobs/:id', (_req, res) => {
 /**
  * Job の start
  */
-app.post('/jobs/:id/start', (_req, res) => {
+app.post<{ Params: { id: string } }>('/jobs/:id/start', (req, res) => {
+  const jobId = req.params.id;
+  const jobIndex = jobs.findIndex(v => v.id === jobId);
+  if (jobIndex === -1) {
+    void res
+      .status(404)
+      .send({ error: { reason: 'job.not-found', message: `The job with id: '${jobId}' not found.` } });
+    return;
+  }
+  const job = jobs[jobIndex] as Job;
+
+
+  const addTaskIntoQueue = (j: Job, parentsJobIdList: string[]) => {
+    j.status = JobStatus.waiting;
+    switch (j.type) {
+      case JobType.single:
+          processQueue.add({ baseJob: j, parentsJobIdList });
+        break;
+      case JobType.chain:
+        // TODO: 順番を保証したい
+        Object.values(j.chainJobs).forEach(v => {
+          addTaskIntoQueue(v, [...parentsJobIdList, j.id]);
+        });
+        break;
+      case JobType.cluster:
+        j.jobCluster.forEach(v => {
+          addTaskIntoQueue(v, [...parentsJobIdList, j.id]);
+        });
+        break;
+      default:
+        assertNever(j);
+    }
+  };
+
+  addTaskIntoQueue(job, []);
   void res.send();
 });
 

@@ -2,6 +2,12 @@ import type { Command } from './Command';
 
 export type Job = SingleJob | ChainJob | ClusterJob;
 
+export const JobType = {
+  single: 'single',
+  chain: 'chain',
+  cluster: 'cluster',
+} as const;
+
 export type SingleJob = {
   type: 'single';
   command: Command;
@@ -64,6 +70,11 @@ type JobBase = {
       status: 'succeeded' | 'failed';
       startedAt: Date;
       endedAt: Date;
+    }
+  | {
+      status: 'waiting';
+      startedAt?: undefined;
+      endedAt?: undefined;
     }
   | {
       status: 'ongoing';
