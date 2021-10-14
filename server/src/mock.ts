@@ -67,3 +67,11 @@ export const mock = (): Job[] => {
   const jobs: Job[] = [singleJob(), chainJob1(), clusterJob1(), chainJob2(), clusterJob2()];
   return jobs;
 };
+
+export const genJobMock = (j: Omit<Job, 'id' | 'createdAt'>): Job => {
+  return {
+    ...j,
+    id: ulid(),
+    createdAt: new Date(),
+  } as Job;
+};

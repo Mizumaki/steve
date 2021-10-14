@@ -1,7 +1,7 @@
 import fastify from 'fastify';
 import fastifyCors from 'fastify-cors';
 import type { Job } from './entity/Job';
-import { mock } from './mock';
+import { genJobMock, mock } from './mock';
 
 const port = process.env['PORT'] || 8080;
 
@@ -22,7 +22,11 @@ app.get('/jobs', (_req, res) => {
 /**
  * Job の新規作成
  */
-app.post('/jobs', (_req, res) => {
+app.post<{ Body: Omit<Job, 'id' | 'createdAt' | 'status'> }>('/jobs', (req, res) => {
+  // TODO: Check body format
+  const jobData = req.body;
+  const job = genJobMock({ ...jobData, status: 'before-start' });
+  jobs.push(job);
   void res.send();
 });
 
