@@ -1,0 +1,10 @@
+{
+  "name": "redis",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "CONF_PATH=./redis.conf node index.js"
+  },
+  "dependencies": {
+    "redis-server": "^1.2.2"
+  }
+}
