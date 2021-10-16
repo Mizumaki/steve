@@ -1,1 +1,1 @@
-export type Command = string
+export type Command = string;

@@ -18,6 +18,7 @@
     "@typescript-eslint/explicit-module-boundary-types": 0,
     "@typescript-eslint/no-unsafe-call": "off", // For `jest` test code...
     "@typescript-eslint/no-unsafe-member-access": "off", // For `jest` test code...
+    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
     "prettier/prettier": ["off", {}, { "userprettierrc": true }] // Not showing coding style warninig. Coding style will be fixed by prettier.
   }
 }
