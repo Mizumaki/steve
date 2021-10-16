@@ -1,0 +1,17 @@
+{
+  "name": "steve",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:Mizumaki/steve.git",
+  "author": "Ryota Mizumaki <statham.programming@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "precommit": "npm run precommit:client && npm run precommit:server",
+    "precommit:client": "cd client && npm run precommit",
+    "precommit:server": "cd server && npm run precommit"
+  },
+  "devDependencies": {
+    "husky": "^7.0.2",
+    "typescript": "^4.4.4"
+  }
+}

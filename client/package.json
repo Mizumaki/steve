@@ -8,12 +8,19 @@
     "serve": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "format": "prettier --write './src/**/*.{js,ts,jsx,tsx,svelte,json}'",
-    "format:dry-run": "prettier --check './src/**/*.{js,ts,jsx,tsx,svelte,json}'"
+    "format:dry-run": "prettier --check './src/**/*.{js,ts,jsx,tsx,svelte,json}'",
+    "precommit": "lint-staged"
+  },
+  "lint-staged": {
+    "src/**/*.{js,ts,jsx,tsx,svelte}": [
+      "npm run format"
+    ]
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^1.0.0-next.11",
     "@tsconfig/svelte": "^2.0.1",
     "axios": "^0.22.0",
+    "lint-staged": "^11.2.3",
     "prettier": "^2.4.1",
     "prettier-plugin-svelte": "^2.4.0",
     "svelte": "^3.37.0",
