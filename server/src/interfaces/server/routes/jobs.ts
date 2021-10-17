@@ -57,7 +57,7 @@ export const jobsRoutes: FastifyPluginCallback = (app, _options, next) => {
     changeStatusToWaiting(job);
 
     await app.jobHistoryRepository.updateJob(jobId, job);
-    // TODO(PR): Integrate JobQueue Repository
+    await app.jobQueueRepository.registerJob(job);
     void res.send();
   });
 

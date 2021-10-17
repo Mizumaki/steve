@@ -7,7 +7,7 @@
   "scripts": {
     "start": "npm run build && concurrently --kill-others-on-fail --names \"babel,server\" --prefix-colors \"yellow,green\" npm:start:babel npm:start:server",
     "start:babel": "npm run build:babel -- --watch",
-    "start:server": "node-dev ./dist/index",
+    "start:server": "PORT=8080 REDIS_PORT=6379 node-dev ./dist/index",
     "build": "npm run lint:tsc && npm run build:babel",
     "build:babel": "babel ./src --extensions .ts --out-dir ./dist",
     "lint": "npm run lint:tsc & npm run lint:eslint:write",

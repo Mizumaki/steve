@@ -1,5 +1,9 @@
 import { runServer } from './interfaces/server';
 
-const port = Number(process.env['PORT']) || 8080;
+const port = Number(process.env['PORT']);
+const redisPort = Number(process.env['REDIS_PORT']);
 
-runServer({ port });
+if (!port || !redisPort) {
+  throw new Error(`Required environment variables is missing: port: ${port}, redisPort: ${redisPort}`);
+}
+runServer({ port, redisPort });
