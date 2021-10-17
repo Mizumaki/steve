@@ -1,10 +1,8 @@
 import { FastifyPluginCallback } from 'fastify';
 import fp from 'fastify-plugin';
-import Queue from 'bull';
 import { decorateFastifyInstance } from '~/utils/fastify/decorateFastifyInstance';
 import { JobHistoryRepository } from './JobHistory';
 import { JobQueueRepository } from './JobQueue';
-import { Job } from '~/entity/Job';
 
 const decorateJobHistoryRepository: FastifyPluginCallback = (fastify, _opts, done) => {
   decorateFastifyInstance('jobHistoryRepository', new JobHistoryRepository(), fastify);
@@ -12,14 +10,16 @@ const decorateJobHistoryRepository: FastifyPluginCallback = (fastify, _opts, don
 };
 
 const decorateJobQueueRepository: FastifyPluginCallback = (fastify, _opts, done) => {
-  const jobQueue = new Queue<Job>('jobQueue', {
-    redis: {
-      port: fastify.redisPort,
-      host: '127.0.0.1',
-    },
-  });
-
-  decorateFastifyInstance('jobQueueRepository', new JobQueueRepository(jobQueue), fastify);
+  decorateFastifyInstance(
+    'jobQueueRepository',
+    new JobQueueRepository({
+      redisConf: {
+        port: fastify.redis.port,
+        host: fastify.redis.host,
+      },
+    }),
+    fastify
+  );
   done();
 };
 
