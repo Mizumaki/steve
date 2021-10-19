@@ -1,5 +1,6 @@
 import { FastifyPluginCallback } from 'fastify';
 import fp from 'fastify-plugin';
+import { jobHandleLogic } from '~/logics/jobHandleLogic';
 import { decorateFastifyInstance } from '~/utils/fastify/decorateFastifyInstance';
 import { JobHistoryRepository } from './JobHistory';
 import { JobQueueRepository } from './JobQueue';
@@ -17,6 +18,7 @@ const decorateJobQueueRepository: FastifyPluginCallback = (fastify, _opts, done)
         port: fastify.redis.port,
         host: fastify.redis.host,
       },
+      jobHandleLogic: jobHandleLogic({ jobHistoryRepository: fastify.jobHistoryRepository }),
     }),
     fastify
   );

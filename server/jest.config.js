@@ -1,7 +1,7 @@
 const path = require('path')
 const { spawnSync } = require('child_process')
 
-const grepFlag = "if (process.env.NODE_ENV === 'test') {"
+const grepFlag = "if (process.env\\['NODE_ENV'\\] === 'test') {"
 
 const targetBasePaths = ['src']
 
@@ -23,5 +23,6 @@ targetBasePaths.forEach(p => {
 })
 
 module.exports = {
+  // setupFiles: [],
   testRegex: filePaths
 }
