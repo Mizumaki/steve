@@ -1,4 +1,4 @@
-import { ChainJob, ClusterJob, Job, JobStatus, JobType, SingleJob } from '~/entity/Job';
+import { Job, JobStatus, JobType } from '~/entity/Job';
 import { JobHistoryRepositoryInterface } from '~/repository/JobHistory';
 import { runCommand } from '~/utils/runCommand';
 

@@ -2,7 +2,6 @@
   import type { ChainJob } from 'src/logics/Job';
   import JobRow from './JobRow.svelte';
   export let item: ChainJob;
-  let chanJobIndexes = [...Array(Object.keys(item.chainJobs).length).keys()];
 </script>
 
 <div>
@@ -12,9 +11,9 @@
   </div>
   <div class="chainJobs">
     <ul>
-      {#each chanJobIndexes as i}
+      {#each item.chainJobs as job}
         <li>
-          <JobRow item={item.chainJobs[i]} />
+          <JobRow item={job} />
         </li>
       {/each}
     </ul>

@@ -15,9 +15,7 @@ export type SingleJob = {
 
 export type ChainJob = {
   type: 'chain';
-  chainJobs: {
-    [index: number]: Job;
-  };
+  chainJobs: Job[];
 } & JobBase;
 
 export type ClusterJob = {

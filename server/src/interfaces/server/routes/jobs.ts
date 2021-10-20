@@ -41,7 +41,7 @@ export const jobsRoutes: FastifyPluginCallback = (app, _options, next) => {
         case JobType.single:
           break;
         case JobType.chain:
-          Object.values(j.chainJobs).forEach(v => {
+          j.chainJobs.forEach(v => {
             changeStatusToWaiting(v);
           });
           break;
