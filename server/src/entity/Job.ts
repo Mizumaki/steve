@@ -33,7 +33,8 @@ export type ChainJob = {
 export type ClusterJob = {
   type: 'cluster';
   jobCluster: Job[];
-  whenOneOfClusterFailed: JobBehaviorOnFailed;
+  // TODO: It's hard to stop running Promise so can't implement this option on ClusterJob. Consider using RxJS instead?
+  // whenOneOfClusterFailed: JobBehaviorOnFailed;
   onEnd?: Command;
 } & JobBase;
 

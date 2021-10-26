@@ -23,7 +23,7 @@ export const jobHandleLogic = ({
         if (error) {
           await updateStatusToFailed(job.id);
           if (job.onFailed) {
-            void runCommand(job.onFailed).catch(e => {
+            await runCommand(job.onFailed).catch(e => {
               // TODO: Handle log well
               console.error(`The 'onFailed' for ${job.id} failed: ${(e as unknown) as string}`);
               throw e;
@@ -35,8 +35,7 @@ export const jobHandleLogic = ({
         if (job.onSuccess) {
           // TODO: pass these to job.onSuccess
           console.info(`stdout: ${stdout}, stderr: ${stderr}`);
-          // The command in onSuccess is not awaited
-          void runCommand(job.onSuccess).catch(e => {
+          await runCommand(job.onSuccess).catch(e => {
             // TODO: Handle log well
             console.error(`The 'onSuccess' for ${job.id} failed: ${(e as unknown) as string}`);
             throw e;
@@ -79,16 +78,29 @@ export const jobHandleLogic = ({
         }
 
         if (job.onEnd) {
-          void runCommand(job.onEnd).catch(e => {
+          // TODO: Pass success/failed job ids
+          await runCommand(job.onEnd).catch(e => {
             // TODO: Handle log well
-            console.error(`The 'onFailed' for ${job.id} failed: ${(e as unknown) as string}`);
+            console.error(`The 'onEnd' for ${job.id} failed: ${(e as unknown) as string}`);
             throw e;
           });
         }
         return { error: undefined };
       }
       case JobType.cluster: {
-        // TODO(PR): clusterJob のケースも追加する
+        // TODO(PR): clusterJob のケースも追加
+        await updateStatusToRunning(job.id);
+        const jobResults = await Promise.all(job.jobCluster.map(j => handleJob(j)));
+        await updateStatusToSuccess(job.id);
+        if (job.onEnd) {
+          console.log({ jobResults });
+          // TODO: Pass success/failed job ids
+          await runCommand(job.onEnd).catch(e => {
+            // TODO: Handle log well
+            console.error(`The 'onEnd' for ${job.id} failed: ${(e as unknown) as string}`);
+            throw e;
+          });
+        }
         return { error: undefined };
       }
     }
