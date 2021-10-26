@@ -1,3 +1,4 @@
+import { ValueOf } from '~/utils/ValueOf';
 import type { Command } from './Command';
 
 export type Job = SingleJob | ChainJob | ClusterJob;
@@ -8,19 +9,32 @@ export const JobType = {
   cluster: 'cluster',
 } as const;
 
+export const JobBehaviorOnFailed = {
+  stop: 'STOP',
+  fail: 'FAIL',
+  skip: 'SKIP',
+} as const;
+type JobBehaviorOnFailed = ValueOf<typeof JobBehaviorOnFailed>;
+
 export type SingleJob = {
   type: 'single';
   command: Command;
+  onSuccess?: Command;
+  onFailed?: Command;
 } & JobBase;
 
 export type ChainJob = {
   type: 'chain';
   chainJobs: Job[];
+  whenOneOfChainFailed: JobBehaviorOnFailed;
+  onEnd?: Command;
 } & JobBase;
 
 export type ClusterJob = {
   type: 'cluster';
   jobCluster: Job[];
+  whenOneOfClusterFailed: JobBehaviorOnFailed;
+  onEnd?: Command;
 } & JobBase;
 
 export const JobStatus = {
@@ -61,8 +75,6 @@ type JobBase = {
   id: string;
   name: string;
   createdAt: Date;
-  onSuccess?: Command;
-  onFailed?: Command;
 } & (
   | {
       status: 'succeeded' | 'failed';

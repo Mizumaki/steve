@@ -22,7 +22,6 @@ export class JobQueueRepository implements JobQueueRepositoryInterface {
         await jobHandleLogic(job);
         done();
       } catch (e) {
-        // TODO(PR): pause の時の動きは、他の active job を止めるのか止めないのか、よく考える必要あり
         await jobQueue.pause();
         done();
       }
