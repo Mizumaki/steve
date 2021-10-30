@@ -1,4 +1,4 @@
-import { Job, JobBehaviorOnFailed, JobStatus, JobType, SingleJob } from '~/entity/Job';
+import { ChainJob, ClusterJob, Job, JobBehaviorOnFailed, JobStatus, JobType, SingleJob } from '~/entity/Job';
 import { JobHistoryRepositoryInterface } from '~/repository/JobHistory';
 import { CommandError, runCommand, runCommand as _runCommand } from '~/utils/runCommand';
 
@@ -159,7 +159,7 @@ ChainJob with SingleJobs (resolved) => 実行順序の正しさ & error: undefin
 ChainJob with SingleJobs (rejected) (whenOneOfChainFailed: STOP) => 実行順序の正しさと止まること & error: undefined
 ChainJob with SingleJobs (rejected) (whenOneOfChainFailed: FAIL) => 実行順序の正しさと止まること & error: undefined
 ChainJob with SingleJobs (rejected) (whenOneOfChainFailed: SKIP) => 実行順序の正しさと最後までまで進行すること & error: undefined
-ChainJob with SingleJobs (onSuccess error) => 実行順序の正しさ & throw error
+ChainJob with SingleJobs (onEnd error) => 実行順序の正しさ & throw error
 
 ClusterJob with SingleJobs (resolved) => 早い job から終わること & error: undefined
 ClusterJob with SingleJobs (rejected) => 早い job から終わること & error: undefined
@@ -252,6 +252,105 @@ if (process.env['NODE_ENV'] === 'test') {
       expect(updateStatusToPendingMock.mock.calls.length).toBe(0);
       expect(updateStatusToSuccessMock.mock.calls.length).toBe(0);
       expect(updateStatusToFailedMock.mock.calls[0]?.[0]).toBe(job.id);
+    });
+  });
+
+  describe('ChainJob', () => {
+    const singleJob = (cmd: number): SingleJob => ({
+      id: 'job',
+      name: 'test job',
+      type: 'single',
+      command: cmd.toString(),
+      status: 'waiting',
+      createdAt: new Date(),
+      onSuccess: `test onSuccess command for ${cmd}`,
+      onFailed: `test onFailed command for ${cmd}`,
+    });
+
+    test('When all jobs are resolved in serial', async () => {
+      const chainJob: ChainJob = {
+        id: 'job',
+        name: 'test job',
+        type: 'chain',
+        chainJobs: [singleJob(200), singleJob(500), singleJob(100)],
+        whenOneOfChainFailed: 'SKIP',
+        status: 'waiting',
+        createdAt: new Date(),
+        onEnd: 'test onEnd command',
+      };
+
+      runCommandMock.mockImplementation((cmd: number) => {
+        return new Promise(resolve => {
+          setTimeout(() => resolve(mockResCommandSuccess), cmd);
+        });
+      });
+
+      const res = await jobHandler(chainJob);
+      expect(res.error).toBeUndefined();
+      // Test the order of command is serial
+      expect(runCommandMock.mock.calls).toEqual([
+        ['200'],
+        ['test onSuccess command for 200'],
+        ['500'],
+        ['test onSuccess command for 500'],
+        ['100'],
+        ['test onSuccess command for 100'],
+        [chainJob.onEnd],
+      ]);
+
+      expect(updateStatusToRunningMock.mock.calls.length).toBe(4);
+      expect(updateStatusToPendingMock.mock.calls.length).toBe(0);
+      expect(updateStatusToSuccessMock.mock.calls.length).toBe(4);
+      expect(updateStatusToFailedMock.mock.calls.length).toBe(0);
+    });
+  });
+
+  describe('ClusterJob', () => {
+    const singleJob = (cmd: number): SingleJob => ({
+      id: 'job',
+      name: 'test job',
+      type: 'single',
+      command: cmd.toString(),
+      status: 'waiting',
+      createdAt: new Date(),
+      onSuccess: `test onSuccess command for ${cmd}`,
+      onFailed: `test onFailed command for ${cmd}`,
+    });
+
+    test('When all jobs are resolved in parallel', async () => {
+      const clusterJob: ClusterJob = {
+        id: 'job',
+        name: 'test job',
+        type: 'cluster',
+        jobCluster: [singleJob(200), singleJob(500), singleJob(100)],
+        status: 'waiting',
+        createdAt: new Date(),
+        onEnd: 'test onEnd command',
+      };
+
+      runCommandMock.mockImplementation((cmd: number) => {
+        return new Promise(resolve => {
+          setTimeout(() => resolve(mockResCommandSuccess), cmd);
+        });
+      });
+
+      const res = await jobHandler(clusterJob);
+      expect(res.error).toBeUndefined();
+      // Test the order of command is parallel
+      expect(runCommandMock.mock.calls).toEqual([
+        ['200'],
+        ['500'],
+        ['100'],
+        ['test onSuccess command for 100'],
+        ['test onSuccess command for 200'],
+        ['test onSuccess command for 500'],
+        [clusterJob.onEnd],
+      ]);
+
+      expect(updateStatusToRunningMock.mock.calls.length).toBe(4);
+      expect(updateStatusToPendingMock.mock.calls.length).toBe(0);
+      expect(updateStatusToSuccessMock.mock.calls.length).toBe(4);
+      expect(updateStatusToFailedMock.mock.calls.length).toBe(0);
     });
   });
 }
