@@ -1,6 +1,6 @@
-import { Job, JobBehaviorOnFailed, JobStatus, JobType } from '~/entity/Job';
+import { Job, JobBehaviorOnFailed, JobStatus, JobType, SingleJob } from '~/entity/Job';
 import { JobHistoryRepositoryInterface } from '~/repository/JobHistory';
-import { CommandError, runCommand as _runCommand } from '~/utils/runCommand';
+import { CommandError, runCommand, runCommand as _runCommand } from '~/utils/runCommand';
 
 const handleJobGen = ({
   updateStatusToRunning,
@@ -35,11 +35,12 @@ const handleJobGen = ({
       if (error) {
         await updateStatusToFailed(job.id);
         if (job.onFailed) {
-          await runCommand(job.onFailed).catch(e => {
+          const res = await runCommand(job.onFailed);
+          if (res.error) {
             // TODO: Handle log well
-            console.error(`The 'onFailed' for ${job.id} failed: ${(e as unknown) as string}`);
-            throw e;
-          });
+            console.error(`The 'onFailed' for ${job.id} failed: ${res.error.message}`);
+            throw res.error;
+          }
         }
         return { error };
       }
@@ -47,11 +48,12 @@ const handleJobGen = ({
       if (job.onSuccess) {
         // TODO: pass these to job.onSuccess
         console.info(`stdout: ${stdout}, stderr: ${stderr}`);
-        await runCommand(job.onSuccess).catch(e => {
+        const res = await runCommand(job.onSuccess);
+        if (res.error) {
           // TODO: Handle log well
-          console.error(`The 'onSuccess' for ${job.id} failed: ${(e as unknown) as string}`);
-          throw e;
-        });
+          console.error(`The 'onSuccess' for ${job.id} failed: ${res.error.message}`);
+          throw res.error;
+        }
       }
       return { error: undefined };
     }
@@ -153,11 +155,6 @@ export const jobHandleLogic = ({
 
 それぞれ、status の更新は正しいことを確認する
  
-SingleJob (resolved) => error: undefined
-SingleJob (rejected) => error: CommandError
-SingleJob (onSuccess error) => throw error
-SingleJob (onFailed error) => throw error
- 
 ChainJob with SingleJobs (resolved) => 実行順序の正しさ & error: undefined
 ChainJob with SingleJobs (rejected) (whenOneOfChainFailed: STOP) => 実行順序の正しさと止まること & error: undefined
 ChainJob with SingleJobs (rejected) (whenOneOfChainFailed: FAIL) => 実行順序の正しさと止まること & error: undefined
@@ -169,42 +166,92 @@ ClusterJob with SingleJobs (rejected) => 早い job から終わること & erro
 ClusterJob with SingleJobs (onSuccess error) => 早い job から終わること & throw error
  */
 
-// if (process.env['NODE_ENV'] === 'test') {
-//   // https://stackoverflow.com/questions/56174883/how-to-add-global-commands-to-jest-like-describe-and-it
-//   const mockSingleJob = ({ id, command }: { id: string; command: string }) =>
-//     ({
-//       id,
-//       type: 'single',
-//       name: '単一Job',
-//       command,
-//       status: 'waiting',
-//       createdAt: new Date(),
-//     } as const);
+if (process.env['NODE_ENV'] === 'test') {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+  const updateStatusToRunningMock = jest.fn();
+  const updateStatusToPendingMock = jest.fn();
+  const updateStatusToSuccessMock = jest.fn();
+  const updateStatusToFailedMock = jest.fn();
+  const runCommandMock = jest.fn();
 
-//   const singleJob1 = mockSingleJob({ id: 'job1', command: 'curl localhost:8080' });
-//   const jobs: Job[] = [singleJob1];
-//   const jobHandler = jobHandleLogic({
-//     jobHistoryRepository: {
-//       updateJob: async (jobId, updateColumns) => {
-//         const jobIndex = jobs.findIndex(j => j.id === jobId);
-//         jobs[jobIndex] = { ...jobs[jobIndex], ...updateColumns } as Job;
-//         await Promise.resolve();
-//       },
-//     },
-//   });
+  const mockResCommandSuccess = { error: undefined, stdout: 'stdout string', stderr: 'stderr string' };
+  const mockResCommandFailed = {
+    error: new CommandError('test command error', 'test command', new Error()),
+    stdout: 'stdout string',
+    stderr: 'stderr string',
+  };
+  runCommandMock.mockResolvedValue(mockResCommandSuccess);
 
-//   describe('SingleJob', () => {
-//     test('Success Job without onSuccess is correctly resolved', async () => {
-//       // TODO: mock runCommand and check it fires with correct argument
-//       await jobHandler(singleJob1);
-//       expect(jobs[0]?.status).toBe('oongoing');
-//       // After job is done
-//       expect(jobs[0]?.status).toBe('succeeded');
-//     });
-//     test('Success Job with onSuccess is correctly resolved', async () => {});
-//     test('Success Job with failed onSuccess is correctly throw Error', async () => {});
-//     test('Failed Job without onFailed is correctly resolved', async () => {});
-//     test('Success Job with onFailed is correctly resolved', async () => {});
-//     test('Success Job with failed onFailed is correctly throw Error', async () => {});
-//   });
-// }
+  const jobHandler = handleJobGen({
+    updateStatusToRunning: updateStatusToRunningMock,
+    updateStatusToPending: updateStatusToPendingMock,
+    updateStatusToSuccess: updateStatusToSuccessMock,
+    updateStatusToFailed: updateStatusToFailedMock,
+    runCommand: runCommandMock,
+  });
+
+  describe('SingleJob', () => {
+    const job: SingleJob = {
+      id: 'job',
+      name: 'test job',
+      type: 'single',
+      command: 'test job command',
+      status: 'waiting',
+      createdAt: new Date(),
+      onSuccess: 'test onSuccess command',
+      onFailed: 'test onFailed command',
+    };
+
+    test('When command without error', async () => {
+      const res = await jobHandler(job);
+      expect(res.error).toBeUndefined();
+      expect(runCommandMock.mock.calls[0]?.[0]).toBe(job.command);
+      expect(runCommandMock.mock.calls[1]?.[0]).toBe(job.onSuccess);
+      expect(updateStatusToRunningMock.mock.calls[0]?.[0]).toBe(job.id);
+      expect(updateStatusToPendingMock.mock.calls.length).toBe(0);
+      expect(updateStatusToSuccessMock.mock.calls[0]?.[0]).toBe(job.id);
+      expect(updateStatusToFailedMock.mock.calls.length).toBe(0);
+    });
+
+    test('When command with error', async () => {
+      runCommandMock.mockResolvedValueOnce(mockResCommandFailed);
+
+      const res = await jobHandler(job);
+      expect(res.error).toBe(mockResCommandFailed.error);
+      expect(runCommandMock.mock.calls[0]?.[0]).toBe(job.command);
+      expect(runCommandMock.mock.calls[1]?.[0]).toBe(job.onFailed);
+      expect(updateStatusToRunningMock.mock.calls[0]?.[0]).toBe(job.id);
+      expect(updateStatusToPendingMock.mock.calls.length).toBe(0);
+      expect(updateStatusToSuccessMock.mock.calls.length).toBe(0);
+      expect(updateStatusToFailedMock.mock.calls[0]?.[0]).toBe(job.id);
+    });
+
+    test('When command without error but onSuccess error', async () => {
+      runCommandMock.mockResolvedValueOnce(mockResCommandSuccess).mockResolvedValueOnce(mockResCommandFailed);
+
+      const res = jobHandler(job);
+      await expect(res).rejects.toThrow(mockResCommandFailed.error.message);
+      expect(runCommandMock.mock.calls[0]?.[0]).toBe(job.command);
+      expect(runCommandMock.mock.calls[1]?.[0]).toBe(job.onSuccess);
+      expect(updateStatusToRunningMock.mock.calls[0]?.[0]).toBe(job.id);
+      expect(updateStatusToPendingMock.mock.calls.length).toBe(0);
+      expect(updateStatusToSuccessMock.mock.calls[0]?.[0]).toBe(job.id);
+      expect(updateStatusToFailedMock.mock.calls.length).toBe(0);
+    });
+
+    test('When command with error but onFailed error', async () => {
+      runCommandMock.mockResolvedValueOnce(mockResCommandFailed).mockResolvedValueOnce(mockResCommandFailed);
+
+      const res = jobHandler(job);
+      await expect(res).rejects.toThrow(mockResCommandFailed.error.message);
+      expect(runCommandMock.mock.calls[0]?.[0]).toBe(job.command);
+      expect(runCommandMock.mock.calls[1]?.[0]).toBe(job.onFailed);
+      expect(updateStatusToRunningMock.mock.calls[0]?.[0]).toBe(job.id);
+      expect(updateStatusToPendingMock.mock.calls.length).toBe(0);
+      expect(updateStatusToSuccessMock.mock.calls.length).toBe(0);
+      expect(updateStatusToFailedMock.mock.calls[0]?.[0]).toBe(job.id);
+    });
+  });
+}
