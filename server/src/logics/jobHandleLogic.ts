@@ -100,9 +100,12 @@ const handleJobGen = ({
       return { error: undefined };
     }
     case JobType.cluster: {
-      // TODO(PR): clusterJob のケースも追加
       await updateStatusToRunning(job.id);
-      const jobResults = await Promise.all(job.jobCluster.map(j => handleJob(j)));
+      const jobResults = await Promise.allSettled(job.jobCluster.map(j => handleJob(j)));
+      if (jobResults.find(j => j.status === 'rejected')) {
+        // TODO: How to handle job.onSuccess, job.onFailed error
+        throw new Error(`One of JobCluster throw error...`);
+      }
       await updateStatusToSuccess(job.id);
       if (job.onEnd) {
         console.log({ jobResults });
@@ -143,6 +146,29 @@ export const jobHandleLogic = ({
 };
 
 // TODO: Write test (handleJob だけ関数外出しして依存関係整理したらもっとテスト書きやすいかも)
+
+// テストしたいことをリストアップ
+
+/*
+
+それぞれ、status の更新は正しいことを確認する
+ 
+SingleJob (resolved) => error: undefined
+SingleJob (rejected) => error: CommandError
+SingleJob (onSuccess error) => throw error
+SingleJob (onFailed error) => throw error
+ 
+ChainJob with SingleJobs (resolved) => 実行順序の正しさ & error: undefined
+ChainJob with SingleJobs (rejected) (whenOneOfChainFailed: STOP) => 実行順序の正しさと止まること & error: undefined
+ChainJob with SingleJobs (rejected) (whenOneOfChainFailed: FAIL) => 実行順序の正しさと止まること & error: undefined
+ChainJob with SingleJobs (rejected) (whenOneOfChainFailed: SKIP) => 実行順序の正しさと最後までまで進行すること & error: undefined
+ChainJob with SingleJobs (onSuccess error) => 実行順序の正しさ & throw error
+
+ClusterJob with SingleJobs (resolved) => 早い job から終わること & error: undefined
+ClusterJob with SingleJobs (rejected) => 早い job から終わること & error: undefined
+ClusterJob with SingleJobs (onSuccess error) => 早い job から終わること & throw error
+ */
+
 // if (process.env['NODE_ENV'] === 'test') {
 //   // https://stackoverflow.com/questions/56174883/how-to-add-global-commands-to-jest-like-describe-and-it
 //   const mockSingleJob = ({ id, command }: { id: string; command: string }) =>
