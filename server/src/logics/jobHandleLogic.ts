@@ -112,11 +112,12 @@ const handleJobGen = ({
       if (job.onEnd) {
         console.log({ jobResults });
         // TODO: Pass success/failed job ids
-        await runCommand(job.onEnd).catch(e => {
+        const res = await runCommand(job.onEnd);
+        if (res.error) {
           // TODO: Handle log well
-          console.error(`The 'onEnd' for ${job.id} failed: ${(e as unknown) as string}`);
-          throw e;
-        });
+          console.error(`The 'onEnd' for ${job.id} failed: ${res.error.message}`);
+          throw res.error;
+        }
       }
       return { error: undefined };
     }
@@ -160,10 +161,6 @@ ChainJob with SingleJobs (rejected) (whenOneOfChainFailed: STOP) => 実行順序
 ChainJob with SingleJobs (rejected) (whenOneOfChainFailed: FAIL) => 実行順序の正しさと止まること & error: undefined
 ChainJob with SingleJobs (rejected) (whenOneOfChainFailed: SKIP) => 実行順序の正しさと最後までまで進行すること & error: undefined
 ChainJob with SingleJobs (onEnd error) => 実行順序の正しさ & throw error
-
-ClusterJob with SingleJobs (resolved) => 早い job から終わること & error: undefined
-ClusterJob with SingleJobs (rejected) => 早い job から終わること & error: undefined
-ClusterJob with SingleJobs (onSuccess error) => 早い job から終わること & throw error
  */
 
 if (process.env['NODE_ENV'] === 'test') {
@@ -279,9 +276,9 @@ if (process.env['NODE_ENV'] === 'test') {
         onEnd: 'test onEnd command',
       };
 
-      runCommandMock.mockImplementation((cmd: number) => {
+      runCommandMock.mockImplementation((cmd: string) => {
         return new Promise(resolve => {
-          setTimeout(() => resolve(mockResCommandSuccess), cmd);
+          setTimeout(() => resolve(mockResCommandSuccess), Number(cmd));
         });
       });
 
@@ -328,14 +325,89 @@ if (process.env['NODE_ENV'] === 'test') {
         onEnd: 'test onEnd command',
       };
 
-      runCommandMock.mockImplementation((cmd: number) => {
+      runCommandMock.mockImplementation((cmd: string) => {
         return new Promise(resolve => {
-          setTimeout(() => resolve(mockResCommandSuccess), cmd);
+          setTimeout(() => resolve(mockResCommandSuccess), Number(cmd));
         });
       });
 
       const res = await jobHandler(clusterJob);
       expect(res.error).toBeUndefined();
+      // Test the order of command is parallel
+      expect(runCommandMock.mock.calls).toEqual([
+        ['200'],
+        ['500'],
+        ['100'],
+        ['test onSuccess command for 100'],
+        ['test onSuccess command for 200'],
+        ['test onSuccess command for 500'],
+        [clusterJob.onEnd],
+      ]);
+
+      expect(updateStatusToRunningMock.mock.calls.length).toBe(4);
+      expect(updateStatusToPendingMock.mock.calls.length).toBe(0);
+      expect(updateStatusToSuccessMock.mock.calls.length).toBe(4);
+      expect(updateStatusToFailedMock.mock.calls.length).toBe(0);
+    });
+
+    test('When the middle job is rejected', async () => {
+      const clusterJob: ClusterJob = {
+        id: 'job',
+        name: 'test job',
+        type: 'cluster',
+        jobCluster: [singleJob(200), singleJob(500), singleJob(100)],
+        status: 'waiting',
+        createdAt: new Date(),
+        onEnd: 'test onEnd command',
+      };
+
+      runCommandMock.mockImplementation((cmd: string) => {
+        return new Promise(resolve => {
+          setTimeout(() => resolve(cmd === '500' ? mockResCommandFailed : mockResCommandSuccess), Number(cmd));
+        });
+      });
+
+      const res = await jobHandler(clusterJob);
+      expect(res.error).toBeUndefined();
+      // Test the order of command is parallel
+      expect(runCommandMock.mock.calls).toEqual([
+        ['200'],
+        ['500'],
+        ['100'],
+        ['test onSuccess command for 100'],
+        ['test onSuccess command for 200'],
+        ['test onFailed command for 500'],
+        [clusterJob.onEnd],
+      ]);
+
+      expect(updateStatusToRunningMock.mock.calls.length).toBe(4);
+      expect(updateStatusToPendingMock.mock.calls.length).toBe(0);
+      expect(updateStatusToSuccessMock.mock.calls.length).toBe(3);
+      expect(updateStatusToFailedMock.mock.calls.length).toBe(1);
+    });
+
+    test('When onEnd is error', async () => {
+      const clusterJob: ClusterJob = {
+        id: 'job',
+        name: 'test job',
+        type: 'cluster',
+        jobCluster: [singleJob(200), singleJob(500), singleJob(100)],
+        status: 'waiting',
+        createdAt: new Date(),
+        onEnd: 'test onEnd command',
+      };
+
+      runCommandMock.mockImplementation((cmd: string) => {
+        return new Promise(resolve => {
+          if (cmd === 'test onEnd command') {
+            resolve(mockResCommandFailed);
+          }
+          setTimeout(() => resolve(mockResCommandSuccess), Number(cmd));
+        });
+      });
+
+      const res = jobHandler(clusterJob);
+      await expect(res).rejects.toThrow(mockResCommandFailed.error.message);
       // Test the order of command is parallel
       expect(runCommandMock.mock.calls).toEqual([
         ['200'],
